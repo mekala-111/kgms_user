@@ -1,0 +1,156 @@
+plugins {
+    id 'com.android.application'
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+    // END: FlutterFire Configuration
+    id 'kotlin-android'
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id 'dev.flutter.flutter-gradle-plugin'
+}
+
+// Load keystore properties
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+// Load local properties for API keys and secrets
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+
+android {
+    namespace 'com.tamasakonar.kgms_user'
+    compileSdk flutter.compileSdkVersion
+    ndkVersion "27.0.12077973"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+
+        debug {
+            // Use debug keystore for development
+            storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    defaultConfig {
+        applicationId 'com.tamasakonar.kgms_user'
+
+        // Updated minimum SDK for better compatibility and security
+        minSdk 23  // Support for Firebase Auth 23.2.1+ and modern security features
+        targetSdk flutter.targetSdkVersion
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+
+        // Multi-dex support for large apps
+        multiDexEnabled true
+
+        // Secure API key handling using manifest placeholders
+        manifestPlaceholders = [
+                googleMapsApiKey: localProperties.getProperty('GOOGLE_MAPS_API_KEY', 'debug_api_key_placeholder')
+        ]
+
+        // Test instrumentation runner
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+
+            // Debug-specific configurations
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+
+            // Debug manifest placeholders (use debug API key if available)
+            manifestPlaceholders = [
+                    googleMapsApiKey: localProperties.getProperty('GOOGLE_MAPS_API_KEY_DEBUG',
+                            localProperties.getProperty('GOOGLE_MAPS_API_KEY', 'debug_api_key_placeholder'))
+            ]
+        }
+
+        release {
+            signingConfig signingConfigs.release
+
+            // Production optimizations
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
+
+            // Advanced ProGuard/R8 optimizations
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Production manifest placeholders
+            manifestPlaceholders = [
+                    googleMapsApiKey: localProperties.getProperty('GOOGLE_MAPS_API_KEY_PROD',
+                            localProperties.getProperty('GOOGLE_MAPS_API_KEY', 'production_api_key_missing'))
+            ]
+        }
+    }
+
+    // App Bundle optimization
+    bundle {
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+
+    // Lint options
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    // Packaging options
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+    }
+
+    // Build features
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+// Dependencies for multi-dex support if needed
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+}

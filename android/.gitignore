@@ -1,0 +1,53 @@
+# Sensitive configuration files - NEVER COMMIT THESE
+android/key.properties
+android/local.properties
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Environment files
+.env*
+**/secrets/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Build artifacts
+build/
+**/build/
+
+# Generated files
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Platform specific
+android/.gradle/
+android/captures/
+android/local.properties
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
