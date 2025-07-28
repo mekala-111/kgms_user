@@ -7,7 +7,6 @@ import 'package:kgms_user/screens/mybookedservices.dart';
 import 'package:kgms_user/screens/service_details.dart';
 import 'package:kgms_user/model/service.dart' as service_model;
 import 'package:kgms_user/model/getservices.dart' as product_model;
-
 import '../colors/colors.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
@@ -19,18 +18,31 @@ class ServicesPage extends ConsumerStatefulWidget {
 
 class ServicesPageState extends ConsumerState<ServicesPage> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+void initState() {
+  super.initState();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final productState = ref.read(productserviceprovider);
+    final serviceState = ref.read(serviceProvider);
+
+    if (productState.data == null || productState.data!.isEmpty) {
       ref.read(productserviceprovider.notifier).getproductSevices();
+    }
+    if (serviceState.data == null || serviceState.data!.isEmpty) {
       ref.read(serviceProvider.notifier).getSevices();
-    });
-  }
+    }
+  });
+}
+
 
   Future<void> _loadProducts() async {
-    await ref.read(productserviceprovider.notifier).getproductSevices();
-    await ref.read(serviceProvider.notifier).getSevices();
-  }
+  ref.read(productserviceprovider.notifier).reset();
+  ref.read(serviceProvider.notifier).reset();
+
+  await ref.read(productserviceprovider.notifier).getproductSevices();
+  await ref.read(serviceProvider.notifier).getSevices();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -428,7 +440,7 @@ class ServiceItem extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: List.generate(
-                      5,
+                      4,
                       (index) => Icon(
                         Icons.star_rounded,
                         size: screenWidth * 0.035,
@@ -437,7 +449,7 @@ class ServiceItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(width: screenWidth * 0.015),
+                SizedBox(width: screenWidth * 0.007),
                 Flexible(
                   flex: 3,
                   child: Text(

@@ -484,7 +484,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                               textEditingController: locationSearchController,
                               focusNode: locationFocusNode,
                               googleAPIKey:
-                                  "AIzaSyCMADwyS3eoxJ5dQ_iFiWcDBA_tJwoZosw",
+                                  "AIzaSyDcEBHY-4sTUz254VZ9OD3Xr-7462LvBts",
                               inputDecoration: InputDecoration(
                                 hintText: "Search for KGMS facility location",
                                 hintStyle:
@@ -722,7 +722,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                               Text(
                                 hasAnyChanges
                                     ? "Save Changes"
-                                    : "No Changes to Save",
+                                    : "No Changes",
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,

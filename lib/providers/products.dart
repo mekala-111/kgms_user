@@ -3,42 +3,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kgms_user/providers/loader.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/retry.dart';
-import 'package:kgms_user/model/product.dart'; // Import your model file
-import 'package:kgms_user/utils/gomed_api.dart'; // Import Bbapi class
+import 'package:kgms_user/model/product.dart';
+import 'package:kgms_user/utils/gomed_api.dart';
 import 'package:kgms_user/providers/auth_state.dart';
 
 class ProductProvider extends StateNotifier<ProductModel> {
-  final Ref ref; // To access other providers
-  ProductProvider(this.ref) : super((ProductModel.initial()));
+  final Ref ref;
+  bool _hasFetched = false;
+
+  ProductProvider(this.ref) : super(ProductModel.initial());
 
   Future<void> fetchProducts() async {
+    if (_hasFetched && state.data != null && state.data!.isNotEmpty) {
+      return; // Skip API call if already fetched
+    }
+
     final loadingState = ref.read(loadingProvider.notifier);
     final loginprovider = ref.read(userProvider);
     final token = loginprovider.data?[0].accessToken;
-    try {
-      //final prefs = await SharedPreferences.getInstance();
-      //String? token = prefs.getString('accessToken');
 
+    try {
       if (token == null || token.isEmpty) {
         throw Exception('Authorization token is missing');
       }
-      loadingState.state = true; // Show loading state
+
+      loadingState.state = true;
+
       final client = RetryClient(
         http.Client(),
         retries: 4,
-        when: (response) {
-          return response.statusCode == 401 ? true : false;
-        },
+        when: (response) => response.statusCode == 401,
         onRetry: (req, res, retryCount) async {
           if (retryCount == 0 && res?.statusCode == 401) {
-            // Here, handle your token restoration logic
-            // You can access other providers using ref.read if needed
             var accessToken = await ref
                 .watch(userProvider.notifier)
                 .restoreAccessToken();
-
-            //print(accessToken); // Replace with actual token restoration logic
-            req.headers['Authorization'] = "Bearer ${accessToken.toString()}";
+            req.headers['Authorization'] = "Bearer $accessToken";
           }
         },
       );
@@ -52,22 +52,26 @@ class ProductProvider extends StateNotifier<ProductModel> {
       );
 
       if (response.statusCode == 200) {
-        // Attempt to parse the response body
         final Map<String, dynamic> res = json.decode(response.body);
         final productData = ProductModel.fromJson(res);
         state = productData;
+       
+        _hasFetched = true;
       } else {
         throw Exception('Failed to load products: ${response.statusCode}');
       }
     } finally {
-      loadingState.state = false; // Hide loading state
+      loadingState.state = false;
     }
+  }
+
+  /// Call this to force the next fetch to re-fetch from API
+  void reset() {
+    _hasFetched = false;
   }
 }
 
-// Define productProvider with ref
-final productProvider = StateNotifierProvider<ProductProvider, ProductModel>((
-  ref,
-) {
+final productProvider =
+    StateNotifierProvider<ProductProvider, ProductModel>((ref) {
   return ProductProvider(ref);
 });

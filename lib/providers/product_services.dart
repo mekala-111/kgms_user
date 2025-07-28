@@ -9,30 +9,29 @@ import 'package:http/retry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Productserviceprovider extends StateNotifier<ProductservicesModel> {
-  final Ref ref; // To access other providers
-  Productserviceprovider(this.ref) : super((ProductservicesModel.initial()));
+  final Ref ref;
+  bool _hasFetched = false;
+
+  Productserviceprovider(this.ref) : super(ProductservicesModel.initial());
 
   Future<void> getproductSevices() async {
+    if (_hasFetched && state.data != null && state.data!.isNotEmpty) return;
+
     final loadingState = ref.read(loadingProvider.notifier);
     try {
       loadingState.state = true;
-      // Retrieve the token from SharedPreferences
+
+      // Fetch token logic (unchanged)...
       final pref = await SharedPreferences.getInstance();
       String? userDataString = pref.getString('userData');
       if (userDataString == null || userDataString.isEmpty) {
-        throw Exception("User token is missing. Please log in again.");
+        throw Exception("User token is missing.");
       }
+
       final Map<String, dynamic> userData = jsonDecode(userDataString);
-      String? token = userData['accessToken'];
-      if (token == null || token.isEmpty) {
-        token =
-            userData['data'] != null &&
-                (userData['data'] as List).isNotEmpty &&
-                userData['data'][0]['access_token'] != null
-            ? userData['data'][0]['access_token']
-            : null;
-      }
-      // Initialize RetryClient for handling retries
+      String? token = userData['accessToken'] ?? userData['data']?[0]?['access_token'];
+      if (token == null) throw Exception("Token not found");
+
       final client = RetryClient(
         http.Client(),
         retries: 3, // Retry up to 3 times
@@ -52,29 +51,30 @@ class Productserviceprovider extends StateNotifier<ProductservicesModel> {
         Uri.parse(Bbapi.getProductservices),
         headers: {"Authorization": "Bearer $token"},
       );
-      final responseBody = response.body;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final res = json.decode(responseBody);
-        // Check if the response body contains
+        final res = json.decode(response.body);
         final serviceData = ProductservicesModel.fromJson(res);
         state = serviceData;
+        
+        _hasFetched = true;
       } else {
-        final Map<String, dynamic> errorBody = jsonDecode(responseBody);
-        final errorMessage =
-            errorBody['message'] ?? "Unexpected error occurred.";
-        throw Exception("Error fetching productservices: $errorMessage");
+        throw Exception("Failed: ${response.statusCode}");
       }
-    } catch (e) {
-      //print("Failed to fetch productservices: $e");
     } finally {
       loadingState.state = false;
     }
   }
+
+  void reset() => _hasFetched = false;
 }
+
 
 // Define productProvider with ref
 final productserviceprovider =
     StateNotifierProvider<Productserviceprovider, ProductservicesModel>((ref) {
       return Productserviceprovider(ref);
     });
+
+
+

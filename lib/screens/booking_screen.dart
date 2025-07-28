@@ -15,16 +15,22 @@ class BookingsPage extends ConsumerStatefulWidget {
 
 class _BookingsPageState extends ConsumerState<BookingsPage> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+ void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final bookingState = ref.read(getproductProvider);
+    if (bookingState.data == null || bookingState.data!.isEmpty) {
       ref.read(getproductProvider.notifier).getuserproduct();
-    });
-  }
+    }
+  });
+}
 
-  Future<void> _refreshBookings() async {
-    await ref.read(getproductProvider.notifier).getuserproduct();
-  }
+
+ Future<void> _refreshBookings() async {
+  ref.read(getproductProvider.notifier).reset(); // Clear cache
+  await ref.read(getproductProvider.notifier).getuserproduct();
+}
+
 
   int getCurrentStep(String status) {
     switch (status.toLowerCase()) {

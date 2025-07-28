@@ -191,8 +191,9 @@ class PhoneAuthNotifier extends StateNotifier<UserModel> {
   Future<void> verifyPhoneNumber(
     String phoneNumber,
     WidgetRef ref,
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    VoidCallback? onOtpReceived, // Add callback parameter
+  }) async {
     final auth = ref.read(firebaseAuthProvider);
     var loader = ref.read(loadingProvider.notifier);
     var codeSentNotifier = ref.read(codeSentProvider.notifier);
@@ -205,6 +206,8 @@ class PhoneAuthNotifier extends StateNotifier<UserModel> {
           try {
             await auth.signInWithCredential(credential);
             // Log success instead of using context in async callback
+            // ignore: use_build_context_synchronously
+            showSnackBar(context, "Phone number automatically verified", Colors.green);
             debugPrint("Phone number automatically verified");
           } catch (e, stackTrace) {
             FirebaseCrashlytics.instance.recordError(
@@ -212,6 +215,8 @@ class PhoneAuthNotifier extends StateNotifier<UserModel> {
               stackTrace,
               reason: "Error during automatic sign-in with credential",
             );
+            // ignore: use_build_context_synchronously
+            showSnackBar(context, "Auto sign-in failed: $e", Colors.red);
             debugPrint("Auto sign-in failed: $e");
           }
         },
@@ -233,16 +238,25 @@ class PhoneAuthNotifier extends StateNotifier<UserModel> {
 
           // Log error instead of using context in async callback
           debugPrint("Verification failed: $errorMsg");
+          showSnackBar(context, errorMsg, Colors.red);
         },
         codeSent: (String verificationId, int? resendToken) {
           pref.setString("verificationid", verificationId);
           codeSentNotifier.state = true;
+          
+          // Call the callback to notify that OTP has been sent/received
+          if (onOtpReceived != null) {
+            onOtpReceived();
+          }
+          
           // Log success instead of using context in async callback
           debugPrint("OTP sent successfully");
+          showSnackBar(context, "OTP sent successfully", Colors.blue);
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           // Log timeout instead of using context in async callback
           debugPrint("Auto retrieval timeout. Please enter OTP manually.");
+          showSnackBar(context, "Auto retrieval timeout. Please enter OTP manually.", Colors.orange);
         },
       );
     } catch (e, stackTrace) {
@@ -259,6 +273,14 @@ class PhoneAuthNotifier extends StateNotifier<UserModel> {
       debugPrint("Error during verification: $e");
     }
   }
+   void showSnackBar(BuildContext context, String message, Color backgroundColor) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: backgroundColor,
+    ),
+  );
+}
 
   // Safe method to show snackbar with context validation
   /* void _showSnackBarSafe(BuildContext context, String message, Color backgroundColor) {

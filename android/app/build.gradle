@@ -65,11 +65,12 @@ android {
 
         // Multi-dex support for large apps
         multiDexEnabled true
-
+        
         // Secure API key handling using manifest placeholders
-        manifestPlaceholders = [
-                googleMapsApiKey: localProperties.getProperty('GOOGLE_MAPS_API_KEY', 'debug_api_key_placeholder')
-        ]
+       manifestPlaceholders = [
+                googleMapsApiKey: "AIzaSyDcEBHY-4sTUz254VZ9OD3Xr-7462LvBts"
+            ]
+
 
         // Test instrumentation runner
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -78,7 +79,7 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            applicationIdSuffix '.debug'
+            // applicationIdSuffix '.debug'
             versionNameSuffix '-debug'
 
             // Debug-specific configurations

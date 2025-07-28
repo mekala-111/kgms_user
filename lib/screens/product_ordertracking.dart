@@ -67,6 +67,7 @@ class _OrderTrackingPageState extends ConsumerState<OrderTrackingPage> {
     final cancelledPrice =
         cancelledProducts.fold(0.0, (sum, p) => sum + p.price * p.quantity);
     final remainingPay = remain - cancelledPrice;
+    String orderid = _truncateText(widget.bookingId , 19);
 
     return Scaffold(
       backgroundColor: KGMS.kgmsWhite,
@@ -127,7 +128,7 @@ class _OrderTrackingPageState extends ConsumerState<OrderTrackingPage> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Order ID: ${widget.bookingId}',
+                          'Order ID: $orderid',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: KGMS.primaryText,
@@ -321,6 +322,11 @@ class _OrderTrackingPageState extends ConsumerState<OrderTrackingPage> {
         ),
       ),
     );
+  }
+ String _truncateText(String text, int maxLength) {
+    return text.length > maxLength
+        ? "${text.substring(0, maxLength)}..."
+        : text;
   }
 
   Widget _buildProductCard(BuildContext context, BookedProduct product,

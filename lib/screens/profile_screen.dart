@@ -812,7 +812,7 @@ class ProfilePageState extends ConsumerState<ProfilePage>
                       // Google Places Search
                       GooglePlaceAutoCompleteTextField(
                         textEditingController: searchController,
-                        googleAPIKey: "AIzaSyCMADwyS3eoxJ5dQ_iFiWcDBA_tJwoZosw",
+                        googleAPIKey: "AIzaSyDcEBHY-4sTUz254VZ9OD3Xr-7462LvBts",
                         inputDecoration: InputDecoration(
                           hintText: "Search location...",
                           hintStyle: const TextStyle(color: KGMS.lightText),

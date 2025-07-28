@@ -17,7 +17,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 class SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
-    final logoutNotifier = ref.read(logoutProvider.notifier);
+   
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -222,7 +222,7 @@ class SettingsPageState extends ConsumerState<SettingsPage> {
                             subtitle: 'Sign out of your KGMS account',
                             color: Colors.red,
                             onTap: () {
-                              _showLogoutDialog(context, logoutNotifier);
+                              _showLogoutDialog(context);
                             },
                           ),
                         ],
@@ -381,11 +381,11 @@ class SettingsPageState extends ConsumerState<SettingsPage> {
                 Center(
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.medical_services_rounded,
-                        color: KGMS.primaryBlue.withValues(alpha: 0.5),
-                        size: 40,
-                      ),
+                      // Icon(
+                      //   Icons.medical_services_rounded,
+                      //   color: KGMS.primaryBlue.withValues(alpha: 0.5),
+                      //   size: 40,
+                      // ),
                       const SizedBox(height: 8),
                       Text(
                         'KGMS',
@@ -455,7 +455,8 @@ class SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, dynamic logoutNotifier) {
+  void _showLogoutDialog(BuildContext context) {
+     final logoutNotifier = ref.read(logoutProvider.notifier);
     showDialog(
       context: context,
       builder: (BuildContext context) {

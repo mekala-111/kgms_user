@@ -860,12 +860,12 @@ class CartScreenState extends ConsumerState<CartScreen> {
                                           },
                                           title: const Row(
                                             children: [
-                                              Icon(
-                                                Icons.money_rounded,
-                                                color: KGMS.primaryGreen,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 8),
+                                              // Icon(
+                                              //   Icons.money_rounded,
+                                              //   color: KGMS.primaryGreen,
+                                              //   size: 20,
+                                              // ),
+                                              // SizedBox(width: 8),
                                               Text("COD"),
                                             ],
                                           ),
@@ -912,12 +912,12 @@ class CartScreenState extends ConsumerState<CartScreen> {
                                           },
                                           title: const Row(
                                             children: [
-                                              Icon(
-                                                Icons.credit_card_rounded,
-                                                color: KGMS.primaryBlue,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 8),
+                                              // Icon(
+                                              //   Icons.credit_card_rounded,
+                                              //   color: KGMS.primaryBlue,
+                                              //   size: 20,
+                                              // ),
+                                              // SizedBox(width: 5),
                                               Text("Online"),
                                             ],
                                           ),

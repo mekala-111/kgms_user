@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kgms_user/model/service.dart';
+import 'package:kgms_user/providers/product_services.dart';
 import 'package:kgms_user/providers/products.dart';
 import 'package:kgms_user/providers/getservice.dart';
 import 'package:kgms_user/screens/products_screen.dart';
@@ -40,6 +41,7 @@ class HomePageContentState extends ConsumerState<HomePageContent> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(productProvider.notifier).fetchProducts();
       ref.read(serviceProvider.notifier).getSevices();
+      ref.read(productserviceprovider.notifier).getproductSevices();
     });
   }
 
@@ -122,7 +124,7 @@ class HomePageContentState extends ConsumerState<HomePageContent> {
             const Row(
               children: [
                 Icon(
-                  Icons.medical_services_rounded,
+                  Icons.handyman_rounded,
                   color: KGMS.primaryGreen,
                   size: 20,
                 ),
@@ -143,6 +145,7 @@ class HomePageContentState extends ConsumerState<HomePageContent> {
                     screenWidth,
                     screenHeight,
                     filteredServices,
+                    ref
                   )
                 : const Center(
                     child: Text(
@@ -259,6 +262,7 @@ class HomePageContentState extends ConsumerState<HomePageContent> {
     double screenWidth,
     double screenHeight,
     List<Data> services,
+    WidgetRef ref,
   ) {
     return SizedBox(
       height: screenHeight * 0.6,
@@ -272,6 +276,7 @@ class HomePageContentState extends ConsumerState<HomePageContent> {
               screenWidth: screenWidth,
               screenHeight: screenHeight,
               service: services[index],
+              ref: ref,
             ),
           );
         },
@@ -286,14 +291,18 @@ class ServiceCard extends StatelessWidget {
     required this.screenWidth,
     required this.screenHeight,
     required this.service,
+    required this.ref,
+
   });
 
   final double screenWidth;
   final double screenHeight;
   final Data service;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
+     String servicedetails = _truncateText(service.details ?? "no description", 30);
     return Container(
       height: screenHeight * 0.2,
       width: double.infinity,
@@ -333,7 +342,7 @@ class ServiceCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Icons.medical_services_rounded,
+                    Icons.settings_suggest_rounded,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -375,7 +384,7 @@ class ServiceCard extends StatelessWidget {
 
             // Service details
             Text(
-              service.details ?? 'Professional Service',
+              servicedetails,
               style: const TextStyle(
                 color: KGMS.primaryBlue,
                 fontSize: 12,
@@ -407,56 +416,113 @@ class ServiceCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [KGMS.kgmsTeal, KGMS.primaryBlue],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [KGMS.kgmsTeal, KGMS.primaryBlue],
                   ),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Get the first productId from the service's productIds list
-                      String? productId = service.productIds?.isNotEmpty == true
-                          ? service.productIds!.first
-                          : '';
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServiceDetailsPage(
-                            service: service,
-                            productId: productId,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    child: const Text(
-                      'Book Now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+               child: ElevatedButton(
+              onPressed: () {
+                _showProductSelectionDialog(context, service,ref);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: const Text(
+                'Book Now',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+
+              )
+
               ],
             ),
           ],
         ),
       ),
     );
+  }
+  void _showProductSelectionDialog(BuildContext context, Data service,WidgetRef ref) {
+  final productData = ref.read(productserviceprovider).data ?? [];
+
+  // Filter product data by matching productIds
+  final matchingProducts = productData
+      .where((product) => service.productIds?.contains(product.productId) ?? false)
+      .toList();
+
+  String? selectedProductId = matchingProducts.isNotEmpty
+      ? matchingProducts.first.productId
+      : null;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text("Select Product"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: matchingProducts.map((product) {
+                  return RadioListTile<String>(
+                    title: Text(product.productName ?? "Unnamed Product"),
+                    value: product.productId ?? "",
+                    groupValue: selectedProductId,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedProductId = value;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (selectedProductId != null) {
+                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ServiceDetailsPage(
+                          service: service,
+                          productId: selectedProductId!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: const Text("Book"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+  String _truncateText(String text, int maxLength) {
+    return text.length > maxLength
+        ? "${text.substring(0, maxLength)}..."
+        : text;
   }
 }

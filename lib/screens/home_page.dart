@@ -165,7 +165,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               label: 'Bookings',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.medical_services_rounded),
+              icon: Icon(Icons.handyman),
               label: 'Services',
             ),
             BottomNavigationBarItem(

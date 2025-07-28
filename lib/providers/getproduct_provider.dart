@@ -10,6 +10,7 @@ import 'package:http/retry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetproductProvider extends StateNotifier<GetproductModel> {
+  bool _hasFetched = false;
   final Ref ref;
   GetproductProvider(this.ref) : super(GetproductModel.initial());
 
@@ -106,11 +107,15 @@ class GetproductProvider extends StateNotifier<GetproductModel> {
   }
 
   Future<void> getuserproduct() async {
+    if (_hasFetched && state.data != null && state.data!.isNotEmpty) {
+      return; // ✅ already fetched
+    }
+
     final loadingState = ref.read(loadingProvider.notifier);
     try {
       loadingState.state = true;
 
-      // Retrieve user data from SharedPreferences
+      // Existing logic...
       final pref = await SharedPreferences.getInstance();
       String? userDataString = pref.getString('userData');
 
@@ -118,26 +123,14 @@ class GetproductProvider extends StateNotifier<GetproductModel> {
         throw Exception("User data is missing. Please log in again.");
       }
 
-      // Decode the user data JSON
       final Map<String, dynamic> userDataJson = jsonDecode(userDataString);
-      // Debugging
-
-      // Convert JSON to UserModel
       UserModel userModel = UserModel.fromJson(userDataJson);
 
-      // Extract the first available user ID
-      String? loggedInUserId;
-      if (userModel.data != null && userModel.data!.isNotEmpty) {
-        loggedInUserId = userModel.data!.first.user?.sId;
-      }
-
-      if (loggedInUserId == null || loggedInUserId.isEmpty) {
-        throw Exception("User ID not found. Debug: ${userModel.toJson()}");
-      }
-
+      String? loggedInUserId = userModel.data?.first.user?.sId;
       String? token = userModel.data?.first.accessToken;
-      if (token == null || token.isEmpty) {
-        throw Exception("Authentication token missing.");
+
+      if (loggedInUserId == null || token == null || token.isEmpty) {
+        throw Exception("User credentials are invalid.");
       }
 
       final client = RetryClient(
@@ -161,13 +154,10 @@ class GetproductProvider extends StateNotifier<GetproductModel> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      final responseBody = response.body;
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final res = json.decode(responseBody);
+        final res = json.decode(response.body);
         final productData = GetproductModel.fromJson(res);
 
-        // Ensure data is not null before filtering
         final List<Data> userProducts =
             productData.data
                 ?.where((booking) => booking.userId?.sId == loggedInUserId)
@@ -178,17 +168,22 @@ class GetproductProvider extends StateNotifier<GetproductModel> {
           statusCode: productData.statusCode,
           success: productData.success,
           messages: productData.messages,
-          data: userProducts, // Update state with filtered data
+          data: userProducts,
         );
+       
+        _hasFetched = true; // ✅ Mark as fetched
       } else {
-        final Map<String, dynamic> errorBody = jsonDecode(responseBody);
-        final errorMessage =
-            errorBody['message'] ?? "Unexpected error occurred.";
-        throw Exception("Error fetching booking products: $errorMessage");
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['message'] ?? 'Booking fetch error');
       }
     } finally {
       loadingState.state = false;
     }
+  }
+
+  /// Allow re-fetching manually (e.g., pull-to-refresh)
+  void reset() {
+    _hasFetched = false;
   }
 
   Future<bool> cancelBooking(

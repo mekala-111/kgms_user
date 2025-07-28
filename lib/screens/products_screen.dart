@@ -39,26 +39,53 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
   }
 
   Future<void> _initializeData() async {
-    try {
-      await ref.read(productProvider.notifier).fetchProducts();
-      if (mounted) {
-        _setupCategories();
-      }
-    } catch (e) {
-      // Log error for debugging
-      debugPrint('Error initializing product data: $e');
+  try {
+    final productState = ref.read(productProvider);
 
-      // Show user-friendly error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Failed to load products. Please try again."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // Only fetch if data hasn't been loaded yet
+    if (productState.data == null || productState.data!.isEmpty) {
+      await ref.read(productProvider.notifier).fetchProducts();
+    }
+
+    if (mounted) {
+      _setupCategories();
+    }
+  } catch (e) {
+    debugPrint('Error initializing product data: $e');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to load products. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
+
+  Future<void> _refreshData() async {
+  try {
+    ref.read(productProvider.notifier).reset(); // Force re-fetch
+    await ref.read(productProvider.notifier).fetchProducts();
+
+    if (mounted) {
+      _setupCategories(); // Rebuild categories/tabs after refresh
+    }
+  } catch (e) {
+    debugPrint('Error refreshing products: $e');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to refresh products."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
 
   void _setupCategories() {
     final productState = ref.read(productProvider);
@@ -154,17 +181,20 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
         children: [
           const SizedBox(height: 5),
           _buildTabBar(),
-          Expanded(
+         Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: _categories
-                  .map(
-                    (category) =>
-                        _buildCategoryContent(category, _updateCartCount),
-                  )
-                  .toList(),
+              children: _categories.map(
+                (category) {
+                  return RefreshIndicator(
+                    onRefresh: _refreshData,
+                    child: _buildCategoryContent(category, _updateCartCount),
+                  );
+                },
+              ).toList(),
             ),
           ),
+
         ],
       ),
     );
@@ -398,7 +428,7 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
                       _buildProductImage(product, constraints.maxHeight * 0.45),
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -492,28 +522,37 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
           truncatedName,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 13,
+            fontSize: 12,
             color: KGMS.primaryText,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1.0),
         Text(
           truncatedDescription,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: KGMS.secondaryText, fontSize: 10),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         if (product.price != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: KGMS.primaryGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
+          // Container(
+          //   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          //   decoration: BoxDecoration(
+          //     color: KGMS.primaryGreen.withValues(alpha: 0.1),
+          //     borderRadius: BorderRadius.circular(8),
+          //   ),
+          //   child: Text(
+          //     "₹${(product.price! * 1.10).toStringAsFixed(2)}",
+          //     style: const TextStyle(
+          //       color: KGMS.primaryGreen,
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 12,
+          //     ),
+          //   ),
+          // ),
+           Text(
               "₹${(product.price! * 1.10).toStringAsFixed(2)}",
               style: const TextStyle(
                 color: KGMS.primaryGreen,
@@ -521,7 +560,6 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
                 fontSize: 12,
               ),
             ),
-          ),
         const SizedBox(height: 2),
         Row(
           children: [
@@ -545,6 +583,24 @@ class ProductsScreenState extends ConsumerState<ProductsScreen>
     );
   }
 
+  //   Widget _buildAddToCartButton(Data product, bool isInCart, VoidCallback updateCartCount) {
+  //   return SizedBox(
+  //     height: 32, // Fixed smaller height
+  //     width: double.infinity,
+  //     child: ElevatedButton(
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: isInCart ? Colors.orange : const Color(0xFF1BA4CA),
+  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+  //         padding: const EdgeInsets.symmetric(horizontal: 8),
+  //       ),
+  //       onPressed: () => _handleCartButtonPress(product, isInCart, updateCartCount),
+  //       child: Text(
+  //         isInCart ? "Go to Cart" : "Add to Cart",
+  //         style: const TextStyle(color: Colors.white, fontSize: 11),
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _buildAddToCartButton(
     Data product,
     bool isInCart,
